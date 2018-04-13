@@ -1,0 +1,13 @@
+*~
+*.pyc
+static/*
+media/*
+
+.static/*
+.media/*
+.cache/*
+*.sqlite3
+
+env/*
+.e/*
+.dev/*
