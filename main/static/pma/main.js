@@ -55,7 +55,7 @@ uR.ready(function() {
     constructor(opts={}) {
       super(opts)
       //this.newCanvas({ controller: true });
-      var floor = pma.map_config.get("floor");
+      this.floor = pma.map_config.get("floor");
       var self = this;
       this._selected = [];
       this.width = opts.parent.scrollWidth;
@@ -66,14 +66,26 @@ uR.ready(function() {
         height: this.width,
         width: this.height
       });
+      var FLOORS = {
+        'first': { 'name': 'first', x_scale: 1.35, y_scale: 1.35, y_off: 0.1 },
+      }
+      var f = FLOORS[this.floor]
+      var max_wh = Math.min(this.width,this.height);
+      console.log(this.width,this.height,max_wh);
+
       this.svg = SVG(this.svg_tag);
+      self.svg.image(
+        `/static/pma/img/${self.floor}.png`,
+        max_wh*f.x_scale,
+        max_wh*f.y_scale,
+      ).center(this.width/2,this.height/2+f.y_off*max_wh);
       uR.storage.remote(`/api/location/?per_page=0`,function(data) {
         self.all_rooms = data.results;
         self.normalizeCoordinates();
         self.showRooms(pma.map_config.getData());
         self.draw();
         for (var room of self.visible_rooms) {
-          var polygon = self.svg.polygon(room.canvas_coords).fill(NAME_COLOR_MAP[room.name] || "white")
+          var polygon = self.svg.polygon(room.canvas_coords).fill("rgba(255,255,255,0.3)") //NAME_COLOR_MAP[room.name] || "white")
             .stroke({ width: 1 })
             .click(function() {
               var dx = 5;
@@ -83,11 +95,12 @@ uR.ready(function() {
               box.y = box.y-dy
               box.width = box.width+2*dx;
               box.height = box.height+2*dy;
-              this.parent().viewbox(box);
-              console.log(this.room);
+              this.parent().animate().viewbox(box);
             });
+          self.bbox = self.bbox?self.bbox.merge(polygon.bbox()):polygon.bbox();
           polygon.room = room;
         }
+        self.svg.viewbox(self.bbox);
       });
     }
     mouseup(e) {
@@ -162,7 +175,13 @@ uR.ready(function() {
       }
       for (var room of rooms) {
         room.canvas_coords = room.rotated.map(normalizePoint);
-        room._geo = analyzePoints(room.canvas_coords);
+        let g = room._geo = analyzePoints(room.canvas_coords);
+        room.canvas_coords = [
+          [g.x_min,g.y_min],
+          [g.x_min,g.y_max],
+          [g.x_max,g.y_max],
+          [g.x_max,g.y_min],
+        ]
       }
     }
     showRooms(filters) {
