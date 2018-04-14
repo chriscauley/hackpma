@@ -80,7 +80,7 @@ class MuseumObject(APIModel):
       self.artists.add(artist)
 
 class Location(APIModel):
-  json_fields = ['name','coordinates']
+  json_fields = ['name','coordinates','floor']
   json_filter_fields = {
     'name': 'name__icontains',
     'floor': 'floor',

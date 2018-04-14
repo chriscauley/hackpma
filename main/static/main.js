@@ -25,9 +25,10 @@ uR.ready(function() {
       var floor = pma.map_config.get("floor");
       var self = this;
       this._selected = [];
-      uR.storage.remote(`/api/location/?per_page=0&floor=${floor}`,function(data) {
-        self.data = data;
-        self.showRooms(data.results);
+      uR.storage.remote(`/api/location/?per_page=0`,function(data) {
+        self.all_rooms = data.results;
+        self.normalizeCoordinates();
+        self.showRooms(pma.map_config.getData());
         self.draw();
       });
     }
@@ -45,10 +46,8 @@ uR.ready(function() {
         }
       }
     }
-    showRooms(rooms) {
-      rooms = rooms.filter((r) => r.coordinates);
-      //      rooms = rooms.filter((r) => r.id == 182);
-      this.visible_rooms = rooms;
+    normalizeCoordinates() {
+      var rooms = this.all_rooms.filter((r) => r.coordinates);
       var all_x = [];
       var all_y = [];
       for (var room of rooms) {
@@ -126,6 +125,13 @@ uR.ready(function() {
         room.canvas_coords = room.rotated.map(normalizePoint);
         room._geo = analyzePoints(room.canvas_coords);
       }
+    }
+    showRooms(filters) {
+      var rooms = this.all_rooms.filter((r) => r.coordinates);
+      for (var key in filters) {
+        rooms = rooms.filter((r) => r[key] == filters[key])
+      }
+      this.visible_rooms = rooms;
       this.draw();
     }
     draw() {
