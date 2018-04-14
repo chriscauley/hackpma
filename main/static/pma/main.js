@@ -19,7 +19,7 @@ uR.ready(function() {
   pma.map_config = new uR.Config("display",[
     { name: 'floor', value: "first" }
   ]);
-  class Map extends uR.canvas.CanvasObject {
+  pma.Map = class Map extends uR.canvas.CanvasObject {
     constructor(opts={}) {
       super(opts)
       this.newCanvas({ controller: true });
@@ -43,7 +43,7 @@ uR.ready(function() {
             mouse_y > room._geo.y_min &&
             mouse_y < room._geo.y_max) {
           this._selected.push(room.name);
-          console.log(this._selected);
+          this.showRooms({ id: room.id})
         }
       }
     }
@@ -114,7 +114,6 @@ uR.ready(function() {
       for (var room of rooms) { _all = _all.concat(room.rotated) }
       var _g = analyzePoints(_all);
 
-      console.log(_g)
       function normalizePoint(xy) {
         // this takes some explanation...
         // the points are currently between [-_g.x_range,_g.x_range] for x and [-g.y_range,_g.y_range] for y
@@ -140,8 +139,6 @@ uR.ready(function() {
       for (var room of this.visible_rooms) {
         this.canvas.drawPolygon(room.canvas_coords,{fillStyle: NAME_COLOR_MAP[room.name] || "black" });
       }
-
     }
   }
-  new Map({ parent: document.getElementById("main") })
 })
