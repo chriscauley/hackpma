@@ -12,7 +12,8 @@ MODELS = {
 }
 
 def paginate(request,results):
-  per_page = int(request.GET.get("per_page",10))
+  # per_page == 0 gives all results
+  per_page = int(request.GET.get("per_page",10)) or len(results)
   pagination = {
     'per_page': per_page,
     'total': len(results),
@@ -29,6 +30,7 @@ def paginate(request,results):
 def get(request,model_slug):
   model = MODELS[model_slug]
   f = { v: request.GET[k] for k,v in model.json_filter_fields.items() if k in request.GET }
+  f.update({ k: False for k,v in f.items() if v == "false" })
   results, pagination = paginate(request,model.objects.filter(**f))
   return Response({
     'results': [r.as_json for r in results],

@@ -84,6 +84,7 @@ class Location(APIModel):
   json_filter_fields = {
     'name': 'name__icontains',
     'floor': 'floor',
+    'coordinates__isnull': 'coordinates__isnull'
   }
   __unicode__ = lambda self: self.name
   from_json_fields = ['name','floor','_open','title','_type']
