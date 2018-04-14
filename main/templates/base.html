@@ -2,7 +2,8 @@
   <head>
     <title>Probably France</title>
     <link rel="stylesheet" href="https://unpkg.com/spectre.css/dist/spectre.min.css">
-    <link href="/static/base.less" rel="stylesheet/less" type="text/css"></link>
+    <link href="/static/pma/less/base.less" rel="stylesheet/less" type="text/css"></link>
+    <link href="/static/pma/less/map.less" rel="stylesheet/less" type="text/css"></link>
     <script src="//cdnjs.cloudflare.com/ajax/libs/less.js/2.7.2/less.min.js"></script>
     <link type="image/x-icon" rel="shortcut icon" href="/static/pmaicon.ico" />
   </head>
@@ -18,5 +19,7 @@
   <script src="http://static.unrest.io/lib/victor.js"></script>
   <script src="http://static.unrest.io/contrib/controller.js"></script>
   <script>uR.auth.reset = function() { return };</script>
-  <script src="/static/main.js"></script>
+  <script src="/static/pma/map.tag" type="riot/tag"></script>
+  <script src="/static/pma/main.js"></script>
+  <script src="/static/pma/router.js"></script>
 </html>  
