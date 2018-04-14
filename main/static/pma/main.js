@@ -16,21 +16,78 @@ uR.ready(function() {
       NAME_COLOR_MAP[name] = color;
     }
   }
+  function analyzePoints(points) {
+    var all_x = points.map((p) => p[0]);
+    var all_y = points.map((p) => p[1]);
+    var x_min = Math.min.apply(null,all_x);
+    var x_max = Math.max.apply(null,all_x);
+    var y_min = Math.min.apply(null,all_y);
+    var y_max = Math.max.apply(null,all_y);
+    return {
+      x_min: x_min,
+      x_max: x_max,
+      y_min: y_min,
+      y_max: y_max,
+      x_mid: (x_min+x_max)/2,
+      y_mid: (y_min+y_max)/2,
+      x_range: x_max-x_min,
+      y_range: y_max-y_min,
+    }
+  }
+  function centerPoint(xy,origin) {
+    return [xy[0]-origin[0],xy[1]-origin[1]];
+  }
+  function rotatePoint(xy,origin,angle) {
+    return [
+      Math.cos(angle) * (xy[0]-origin[0]) - Math.sin(angle) * (xy[1]-origin[1]) + origin[0],
+      Math.sin(angle) * (xy[0]-origin[0]) + Math.cos(angle) * (xy[1]-origin[1]) + origin[1]
+    ];
+  }
+  function skewPoint(xy) {
+    // the lat-lon to xy translation makes the geometry trapizoidal
+    return [xy[0]+0.25*xy[1],xy[1]];
+  }
+
   pma.map_config = new uR.Config("display",[
     { name: 'floor', value: "first" }
   ]);
   pma.Map = class Map extends uR.canvas.CanvasObject {
     constructor(opts={}) {
       super(opts)
-      this.newCanvas({ controller: true });
+      //this.newCanvas({ controller: true });
       var floor = pma.map_config.get("floor");
       var self = this;
       this._selected = [];
+      this.width = opts.parent.scrollWidth;
+      this.height = opts.parent.scrollHeight;
+      this.svg_tag = uR.newElement("svg",{
+        id: "svg",
+        parent: opts.parent,
+        height: this.width,
+        width: this.height
+      });
+      this.svg = SVG(this.svg_tag);
       uR.storage.remote(`/api/location/?per_page=0`,function(data) {
         self.all_rooms = data.results;
         self.normalizeCoordinates();
         self.showRooms(pma.map_config.getData());
         self.draw();
+        for (var room of self.visible_rooms) {
+          var polygon = self.svg.polygon(room.canvas_coords).fill(NAME_COLOR_MAP[room.name] || "white")
+            .stroke({ width: 1 })
+            .click(function() {
+              var dx = 5;
+              var dy = 5;
+              var box = this.bbox();
+              box.x = box.x-dx;
+              box.y = box.y-dy
+              box.width = box.width+2*dx;
+              box.height = box.height+2*dy;
+              this.parent().viewbox(box);
+              console.log(this.room);
+            });
+          polygon.room = room;
+        }
       });
     }
     mouseup(e) {
@@ -58,38 +115,10 @@ uR.ready(function() {
           all_y.push(p[1]);
         }
       }
-      function analyzePoints(points) {
-        var all_x = points.map((p) => p[0]);
-        var all_y = points.map((p) => p[1]);
-        var x_min = Math.min.apply(null,all_x);
-        var x_max = Math.max.apply(null,all_x);
-        var y_min = Math.min.apply(null,all_y);
-        var y_max = Math.max.apply(null,all_y);
-        return {
-          x_min: x_min,
-          x_max: x_max,
-          y_min: y_min,
-          y_max: y_max,
-          x_mid: (x_min+x_max)/2,
-          y_mid: (y_min+y_max)/2,
-          x_range: x_max-x_min,
-          y_range: y_max-y_min,
-        }
-      }
       function analyzeCollections(collections) {
         var _all = [];
         for (var points of collections) { _all = _all.concat(points) }
         return analyzePoints(_all);
-      }
-
-      function centerPoint(xy,origin) {
-        return [xy[0]-origin[0],xy[1]-origin[1]];
-      }
-      function rotatePoint(xy,origin,angle) {
-        return [
-          Math.cos(angle) * (xy[0]-origin[0]) - Math.sin(angle) * (xy[1]-origin[1]) + origin[0],
-          Math.sin(angle) * (xy[0]-origin[0]) + Math.cos(angle) * (xy[1]-origin[1]) + origin[1]
-        ];
       }
 
       // center all the points
@@ -101,25 +130,35 @@ uR.ready(function() {
 
       // now rotate them
       var _g = analyzeCollections(rooms.map((r) => r.coordinates));
-      var angle = -39/180*Math.PI;
+      var angle = -38.5/180*Math.PI;
       var skew = -14/180*Math.PI;
 
       for (var room of rooms) {
-        room.rotated = room.centered.map((p) => rotatePoint(p,[0,0],angle));
+        room.rotated = room.centered.map((p) => skewPoint(rotatePoint(p,[0,0],angle)));
       }
-      var h = this.canvas.height;
-      var w = this.canvas.width;
-      var s = (h<w)?h/_g.y_range:w/_g.x_range;
+    }
+    normalizeRooms(rooms) {
+      var h = this.height;
+      var w = this.width;
       var _all = [];
       for (var room of rooms) { _all = _all.concat(room.rotated) }
       var _g = analyzePoints(_all);
+      for (var room of rooms) {
+        room._centered = room.rotated.map((p) => centerPoint(p,[_g.x_mid,_g.y_mid]));
+      }
+      var _all = [];
+      for (var room of rooms) { _all = _all.concat(room._centered) }
+      var _g = analyzePoints(_all);
+      console.log(_g)
+      var s = (h<w)?h/_g.y_range:w/_g.x_range;
 
       function normalizePoint(xy) {
         // this takes some explanation...
         // the points are currently between [-_g.x_range,_g.x_range] for x and [-g.y_range,_g.y_range] for y
         // adding half the width/height 
         // the x axis needs to be mirrored, so
-        return [w/2-s*(xy[0]+0.25*xy[1]), s*(xy[1])+h/2];
+        // +0.25*xy[1] skews the image to correct for the map projection
+        return [w/2-s*(xy[0]), s*(xy[1])+h/2];
       }
       for (var room of rooms) {
         room.canvas_coords = room.rotated.map(normalizePoint);
@@ -132,13 +171,14 @@ uR.ready(function() {
         rooms = rooms.filter((r) => r[key] == filters[key])
       }
       this.visible_rooms = rooms;
+      this.normalizeRooms(rooms);
       this.draw();
     }
     draw() {
-      this.canvas.clear();
+      /*this.canvas.clear();
       for (var room of this.visible_rooms) {
         this.canvas.drawPolygon(room.canvas_coords,{fillStyle: NAME_COLOR_MAP[room.name] || "black" });
-      }
+      }*/
     }
   }
 })
