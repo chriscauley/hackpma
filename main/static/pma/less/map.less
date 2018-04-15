@@ -1,7 +1,19 @@
-pma-map, pma-map [ref=map_container] {
-  display: block;
+pma-map {
+  display: flex;
   width: 100%;
   height: 100%;
+}
+
+pma-map [ref=map_container] {
+  display: block;
+  flex-basis: 75%;
+  height: 100%;
+}
+
+pma-map .room-list {
+  flex-basis: 25%;
+  height: 100%;
+  overflow: scroll;
 }
 
 pma-map .fa-home {
