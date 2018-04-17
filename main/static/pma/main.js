@@ -1,19 +1,56 @@
 window.pma = window.pma || {};
 uR.config.mount_to = "#main";
 uR.ready(function() {
-  var NAME_COLOR_MAP = {
-    '#fff799': ["167a", "167", "168", "169", "170", "171", "179", "181", "182", "183", "188", "178", "174", "173", "172", "176", "175", "166", "184", "185", "186", "187", "188", "177", "180"],
-    '#c2cb1e': ["151", "150", "154", "156", "153", "155", "152", "157", "159", "bath_159", "160", "161", "158", "161", "162", "165", "165a", "164", "163"],
-    '#6ecff6': ["123", "122", "121", "120"],
-    '#f15745': ["114", "115", "111", "112", "113", "110", "109", "116", "104", "106", "104", "104", "105", "116", "118", "102", "103", "119", "222b_1", "222b_1", "100", "101", "101", "101", "elevator_100", "116", "117", "108", "107","289","287","286","285"],
-    '#a5d9c9': ["294", "295", "296", "299", "297", "292", "291", "298", "290b_2", "290", "280", "284", "279", "278", "283", "281", "282", "277", "277a", "276", "elevator_276", "276a", "252", "250", "251", "256", "255", "254", "257", "258", "260", "265", "266", "268", "271", "270", "269", "272","288", "290a", "290b_2", "293", "253", "261", "262", "263", "275", "274", "273", "267", "264", "259", "253"],
-    '#cfe5ae': ["249", "248", "247", "245", "246"],
-    '#ffe200': ["213a", "206", "221", "205", "220", "219", "204", "202", "203", "210", "201", "215", "216", "214", "200", "207", "208", "209","213", "212", "211", "218", "217"],
-    '#63a9c6': ["243", "244", "240a", "239", "238", "241", "226", "237", "236", "235", "234", "233", "elevator_222", "223", "227", "228", "229", "224", "230", "231", "225", "226", "231","240", "242", "232", "222", "233a"],
-  }
-  for (var color in NAME_COLOR_MAP) {
-    for (var name of NAME_COLOR_MAP[color]) {
-      NAME_COLOR_MAP[name] = color;
+
+  pma.floor_list = [
+    { 'name': 'first', },
+    { 'name': 'second', },
+    { 'name': 'third', },
+  ];
+  pma.floors = {};
+  pma.floor_list.forEach(function(f) { pma.floors[f.name] = f });
+
+  pma.group_list = [
+    { name: 'Modern and Contemporary Art',
+      color: '#fff799',
+      rooms: ["167a", "167", "168", "169", "170", "171", "179", "181", "182", "183", "188", "178", "174", "173", "172", "176", "175", "166", "184", "185", "186", "187", "188", "177", "180"], },
+    { name: 'European Art 1100-1500',
+      color: '#ffe200',
+      rooms: ["213a", "206", "221", "205", "220", "219", "204", "202", "203", "210", "201", "215", "216", "214", "200", "207", "208", "209","213", "212", "211", "218", "217"] },
+
+    { name: 'European Art 1500-1850',
+      color: '#a5d9c9',
+      rooms: ["294", "295", "296", "299", "297", "292", "291", "298", "290b_2", "290", "280", "284", "279", "278", "283", "281", "282", "277", "277a", "276", "elevator_276", "276a", "252", "250", "251", "256", "255", "254", "257", "258", "260", "265", "266", "268", "271", "270", "269", "272","288", "290a", "290b_2", "293", "253", "261", "262", "263", "275", "274", "273", "267", "264", "259", "253"],
+    },
+    { name: 'European Art 1850-1900',
+      color: '#c2cb1e',
+      rooms: ["151", "150", "154", "156", "153", "155", "152", "157", "159", "bath_159", "160", "161", "158", "161", "162", "165", "165a", "164", "163"],},
+    { name: 'American Art',
+      color: '#f15745',
+      rooms: ["114", "115", "111", "112", "113", "110", "109", "116", "104", "106", "104", "104", "105", "116", "118", "102", "103", "119", "222b_1", "222b_1", "100", "101", "101", "101", "elevator_100", "116", "117", "108", "107","289","287","286","285"] },
+    { name: 'Arms and Armor',
+      color: '#cfe5ae',
+      rooms: ["249", "248", "247", "245", "246"],},
+    { name: 'Asian Art',
+      color: '#63a9c6',
+      rooms: ["243", "244", "240a", "239", "238", "241", "226", "237", "236", "235", "234", "233", "elevator_222", "223", "227", "228", "229", "224", "230", "231", "225", "226", "231","240", "242", "232", "222", "233a"],},
+    { name: 'Prints, Drawings and Photographs',
+      color: '#6ecff6',
+      rooms: ["123", "122", "121", "120"] },
+    //{ name: 'Special Exhibitions',
+    //  color: },
+    //{ name: 'Textiles'
+    //  color: },
+  ]
+  pma.groups = {};
+  pma.group_list.forEach(function(f) { pma.groups[f.name] = f });
+
+  var ROOM_COLOR_MAP = {};
+  var ROOM_GROUP_MAP = {};
+  for (var group of pma.group_list) {
+    for (var name of group.rooms) {
+      ROOM_COLOR_MAP[name] = group.color;
+      ROOM_GROUP_MAP[name] = group.name;
     }
   }
   function analyzePoints(points) {
@@ -66,26 +103,27 @@ uR.ready(function() {
         height: this.width,
         width: this.height
       });
-      var FLOORS = {
-        'first': { 'name': 'first', x_scale: 1.35, y_scale: 1.35, y_off: 0.1 },
-      }
-      var f = FLOORS[this.floor]
-      var max_wh = Math.min(this.width,this.height);
-      console.log(this.width,this.height,max_wh);
-
       this.svg = SVG(this.svg_tag);
-      self.svg.image(
-        `/static/pma/img/${self.floor}.png`,
-        max_wh*f.x_scale,
-        max_wh*f.y_scale,
-      ).center(this.width/2,this.height/2+f.y_off*max_wh);
+      // var f = FLOORS[this.floor]
+      // var max_wh = Math.min(this.width,this.height);
+
+      // self.svg.image(
+      //   `/static/pma/img/${self.floor}.png`,
+      //   max_wh*f.x_scale,
+      //   max_wh*f.y_scale,
+      // ).center(this.width/2,this.height/2+f.y_off*max_wh);
       uR.storage.remote(`/api/location/?per_page=0`,function(data) {
         self.all_rooms = data.results;
         self.normalizeCoordinates();
         self.showRooms(pma.map_config.getData());
         self.draw();
+        var visible_groups = [];
         for (var room of self.visible_rooms) {
-          var polygon = self.svg.polygon(room.canvas_coords).fill("rgba(255,255,255,0.3)") //NAME_COLOR_MAP[room.name] || "white")
+          var group_name = ROOM_GROUP_MAP[room.name];
+          if (group_name && visible_groups.indexOf(group_name) == -1) {
+            visible_groups.push(group_name)
+          }
+          var polygon = self.svg.polygon(room.canvas_coords).fill(ROOM_COLOR_MAP[room.name] || "white")
             .stroke({ width: 1 })
             .click(function() {
               var dx = 5;
@@ -97,10 +135,19 @@ uR.ready(function() {
               box.height = box.height+2*dy;
               this.parent().animate().viewbox(box);
             });
-          self.bbox = self.bbox?self.bbox.merge(polygon.bbox()):polygon.bbox();
+          var room_bbox = polygon.bbox();
+          self.bbox = self.bbox?self.bbox.merge(room_bbox):room_bbox;
+          if (group_name) {
+            var group = pma.groups[group_name];
+            group.bbox = group.bbox?group.bbox.merge(room_bbox):room_bbox;
+          }
           polygon.room = room;
         }
+        visible_groups.sort();
+        pma.visible_groups = visible_groups.map((name) => pma.groups[name]);
+
         self.svg.viewbox(self.bbox);
+        self.tag.update()
       });
     }
     mouseup(e) {
@@ -162,7 +209,6 @@ uR.ready(function() {
       var _all = [];
       for (var room of rooms) { _all = _all.concat(room._centered) }
       var _g = analyzePoints(_all);
-      console.log(_g)
       var s = (h<w)?h/_g.y_range:w/_g.x_range;
 
       function normalizePoint(xy) {
@@ -196,7 +242,7 @@ uR.ready(function() {
     draw() {
       /*this.canvas.clear();
       for (var room of this.visible_rooms) {
-        this.canvas.drawPolygon(room.canvas_coords,{fillStyle: NAME_COLOR_MAP[room.name] || "black" });
+        this.canvas.drawPolygon(room.canvas_coords,{fillStyle: ROOM_COLOR_MAP[room.name] || "black" });
       }*/
     }
   }
