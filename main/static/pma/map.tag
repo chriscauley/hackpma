@@ -29,10 +29,10 @@
 
   route(pathname,data) {
     if (data.matches) {
-      var floor = data.matches[1];
-      var group = pma.groups[decodeURI(data.matches[2])];
-      floor && console.log('floor',floor);
-      group && console.log('group',group);
+      pma.current_floor = data.matches[1];
+      pma.current_group = pma.groups[decodeURI(data.matches[2])];
+      pma.current_room = pma.rooms[decodeURI(data.matches[3])];
+      this.map.update();
     }
   }
   reset() {

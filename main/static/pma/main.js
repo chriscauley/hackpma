@@ -44,6 +44,8 @@ uR.ready(function() {
   ]
   pma.groups = {};
   pma.group_list.forEach(function(f) { pma.groups[f.name] = f });
+  pma.rooms = {};
+  pma.room_list = [];
 
   var ROOM_COLOR_MAP = {};
   var ROOM_GROUP_MAP = {};
@@ -114,6 +116,8 @@ uR.ready(function() {
       // ).center(this.width/2,this.height/2+f.y_off*max_wh);
       uR.storage.remote(`/api/location/?per_page=0`,function(data) {
         self.all_rooms = data.results;
+        pma.room_list = pma.room_list.concat(data.results);
+        for (var room of pma.room_list) { pma.rooms[room.name] = room; }
         self.normalizeCoordinates();
         self.showRooms(pma.map_config.getData());
         var visible_groups = [];
@@ -126,7 +130,11 @@ uR.ready(function() {
           var polygon = self.svg.polygon(room.canvas_coords).fill(ROOM_COLOR_MAP[room.name] || "#ccc")
             .stroke({ width: 1 })
             .click(function() {
-              self.focusOn(this.room);
+              if (pma.current_group == this.room.group) {
+                uR.route(`#/${pma.current_floor}/${this.room.group.name}/${this.room.name}/`);
+              } else { // no group selected, zoom in on group
+                uR.route(`#/${pma.current_floor}/${this.room.group.name}/`);
+              }
             });
           room.bbox = polygon.bbox();
           self.bbox = self.bbox?self.bbox.merge(room.bbox):room.bbox;
@@ -143,6 +151,10 @@ uR.ready(function() {
         self.tag.update()
       });
     }
+    update() {
+      var bbox = (pma.current_room || pma.current_group || this).bbox;
+      this.zoomSVG(bbox)
+    }
     zoomSVG(bbox) {
       bbox = bbox.merge(bbox);
       var dx = 5;
@@ -152,15 +164,6 @@ uR.ready(function() {
       bbox.width = bbox.width+2*dx;
       bbox.height = bbox.height+2*dy;
       this.svg.animate().viewbox(bbox);
-    }
-    focusOn(room) {
-      if (!room || !room.group) { return }
-      if (this.focused_group == room.group) {
-        this.zoomSVG(room.bbox);
-      } else {
-        this.focused_group = room.group;
-        this.zoomSVG(room.group.bbox);
-      }
     }
     normalizeCoordinates() {
       var rooms = this.all_rooms.filter((r) => r.coordinates);
