@@ -116,30 +116,23 @@ uR.ready(function() {
         self.all_rooms = data.results;
         self.normalizeCoordinates();
         self.showRooms(pma.map_config.getData());
-        self.draw();
         var visible_groups = [];
         for (var room of self.visible_rooms) {
           var group_name = ROOM_GROUP_MAP[room.name];
+          room.group = pma.groups[group_name];
           if (group_name && visible_groups.indexOf(group_name) == -1) {
             visible_groups.push(group_name)
           }
-          var polygon = self.svg.polygon(room.canvas_coords).fill(ROOM_COLOR_MAP[room.name] || "white")
+          var polygon = self.svg.polygon(room.canvas_coords).fill(ROOM_COLOR_MAP[room.name] || "#ccc")
             .stroke({ width: 1 })
             .click(function() {
-              var dx = 5;
-              var dy = 5;
-              var box = this.bbox();
-              box.x = box.x-dx;
-              box.y = box.y-dy
-              box.width = box.width+2*dx;
-              box.height = box.height+2*dy;
-              this.parent().animate().viewbox(box);
+              self.focusOn(this.room);
             });
-          var room_bbox = polygon.bbox();
-          self.bbox = self.bbox?self.bbox.merge(room_bbox):room_bbox;
+          room.bbox = polygon.bbox();
+          self.bbox = self.bbox?self.bbox.merge(room.bbox):room.bbox;
           if (group_name) {
             var group = pma.groups[group_name];
-            group.bbox = group.bbox?group.bbox.merge(room_bbox):room_bbox;
+            group.bbox = group.bbox?group.bbox.merge(room.bbox):room.bbox;
           }
           polygon.room = room;
         }
@@ -150,18 +143,23 @@ uR.ready(function() {
         self.tag.update()
       });
     }
-    mouseup(e) {
-      var mouse_x = e.offsetX;
-      var mouse_y = e.offsetY;
-      for (var i=0; i<this.visible_rooms.length; i++) {
-        var room = this.visible_rooms[i];
-        if (mouse_x > room._geo.x_min &&
-            mouse_x < room._geo.x_max &&
-            mouse_y > room._geo.y_min &&
-            mouse_y < room._geo.y_max) {
-          this._selected.push(room.name);
-          this.showRooms({ id: room.id})
-        }
+    zoomSVG(bbox) {
+      bbox = bbox.merge(bbox);
+      var dx = 5;
+      var dy = 5;
+      bbox.x = bbox.x-dx;
+      bbox.y = bbox.y-dy
+      bbox.width = bbox.width+2*dx;
+      bbox.height = bbox.height+2*dy;
+      this.svg.animate().viewbox(bbox);
+    }
+    focusOn(room) {
+      if (!room || !room.group) { return }
+      if (this.focused_group == room.group) {
+        this.zoomSVG(room.bbox);
+      } else {
+        this.focused_group = room.group;
+        this.zoomSVG(room.group.bbox);
       }
     }
     normalizeCoordinates() {
@@ -237,13 +235,6 @@ uR.ready(function() {
       }
       this.visible_rooms = rooms;
       this.normalizeRooms(rooms);
-      this.draw();
-    }
-    draw() {
-      /*this.canvas.clear();
-      for (var room of this.visible_rooms) {
-        this.canvas.drawPolygon(room.canvas_coords,{fillStyle: ROOM_COLOR_MAP[room.name] || "black" });
-      }*/
     }
   }
 })
