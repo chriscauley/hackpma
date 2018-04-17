@@ -1,9 +1,12 @@
 <pma-map>
   <div class="room-list">
     <div class="nav" each={ floor,i in pma.floor_list }>
-      <a class="nav-item floor" href="">{ floor.name }</a>
+      <a class="nav-item floor" href="">{ uR.unslugify(floor.name) } Floor</a>
       <div class="nav" if={ floor.name == state.floor }>
-        <a class="nav-item group" style="background: { group.color }" each={ group,i in pma.visible_groups }>{ group.name }</a>
+        <a class="nav-item group" each={ group,i in pma.visible_groups }>
+          <span class="swatch" style="background: { group.color }"></span>
+          <span class="name">{ group.name }</span>
+        </a>
       </div>
     </div>
   </div>

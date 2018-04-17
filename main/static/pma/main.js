@@ -3,9 +3,9 @@ uR.config.mount_to = "#main";
 uR.ready(function() {
 
   pma.floor_list = [
+    { 'name': 'ground', },
     { 'name': 'first', },
     { 'name': 'second', },
-    { 'name': 'third', },
   ];
   pma.floors = {};
   pma.floor_list.forEach(function(f) { pma.floors[f.name] = f });

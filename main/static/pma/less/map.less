@@ -19,6 +19,22 @@ pma-map .room-list {
   overflow: scroll;
   padding: 10px 20px;
   width: 200px;
+  .group {
+    line-height: 1.2;
+    padding: 0.2em 0;
+  }
+  .nav-item { display: flex; }
+  .swatch {
+    flex-basis: 1em;
+    flex-shrink: 0;
+    height: 1em;
+    margin-top: 0.1em;
+    width: 1em;
+  }
+  .name {
+    flex-shrink: 1;
+    padding-left: 0.5em;
+  }
 }
 
 pma-map .fa-home {
