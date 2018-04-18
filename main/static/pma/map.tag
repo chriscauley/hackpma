@@ -1,3 +1,17 @@
+<image-modal>
+  <div class={ theme.outer }>
+    <div class={ theme.content }>
+      <div class="container">
+        <div class="columns">
+          <div class="column col-4 card" each={ image,i in opts.images }>
+            <div><img src={ image.thumbnail_url } /></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</image-modal>
+
 <pma-map>
   <div class="room-list">
     <div class="nav" each={ floor,_f in pma.floor_list }>
@@ -34,6 +48,12 @@
       pma.current_floor = pma.floors[data.matches[1] || "first"];
       pma.current_group = pma.groups[decodeURI(data.matches[2])];
       pma.current_room = pma.rooms[decodeURI(data.matches[3])];
+      pma.current_room && uR.ajax({
+        url: "/api/object/?location_id="+pma.current_room.id,
+        success: function(data) {
+          uR.alertElement("image-modal",{ images: data.results });
+        },
+      });
       this.map && this.map.update();
     }
     this.update()
