@@ -87,25 +87,19 @@ uR.ready(function() {
     return [xy[0]+0.25*xy[1],xy[1]];
   }
 
-  pma.map_config = new uR.Config("display",[
-    { name: 'floor', value: "first" }
-  ]);
   pma.Map = class Map extends uR.canvas.CanvasObject {
     constructor(opts={}) {
       super(opts)
+      this.defaults(opts,{
+        ready: uR.REQUIRED,
+        parent: uR.REQUIRED,
+        width: opts.parent.scrollWidth,
+        height: opts.parent.scrollHeight,
+      });
       //this.newCanvas({ controller: true });
-      this.floor = pma.map_config.get("floor");
       var self = this;
       this._selected = [];
-      this.width = opts.parent.scrollWidth;
-      this.height = opts.parent.scrollHeight;
-      this.svg_tag = uR.newElement("svg",{
-        id: "svg",
-        parent: opts.parent,
-        height: this.width,
-        width: this.height
-      });
-      this.svg = SVG(this.svg_tag);
+
       // var f = FLOORS[this.floor]
       // var max_wh = Math.min(this.width,this.height);
 
@@ -118,55 +112,30 @@ uR.ready(function() {
         self.all_rooms = data.results;
         pma.room_list = pma.room_list.concat(data.results);
         for (var room of pma.room_list) { pma.rooms[room.name] = room; }
-        self.normalizeCoordinates();
-        self.showRooms(pma.map_config.getData());
-        var visible_groups = [];
-        for (var room of self.visible_rooms) {
-          var group_name = ROOM_GROUP_MAP[room.name];
-          room.group = pma.groups[group_name];
-          if (group_name && visible_groups.indexOf(group_name) == -1) {
-            visible_groups.push(group_name)
-          }
-          var polygon = self.svg.polygon(room.canvas_coords).fill(ROOM_COLOR_MAP[room.name] || "#ccc")
-            .stroke({ width: 1 })
-            .click(function() {
-              if (pma.current_group == this.room.group) {
-                uR.route(`#/${pma.current_floor}/${this.room.group.name}/${this.room.name}/`);
-              } else { // no group selected, zoom in on group
-                uR.route(`#/${pma.current_floor}/${this.room.group.name}/`);
-              }
-            });
-          room.bbox = polygon.bbox();
-          self.bbox = self.bbox?self.bbox.merge(room.bbox):room.bbox;
-          if (group_name) {
-            var group = pma.groups[group_name];
-            group.bbox = group.bbox?group.bbox.merge(room.bbox):room.bbox;
-          }
-          polygon.room = room;
-        }
-        visible_groups.sort();
-        pma.visible_groups = visible_groups.map((name) => pma.groups[name]);
-
-        self.svg.viewbox(self.bbox);
-        self.tag.update()
+        var rooms = self.all_rooms.filter((r) => r.coordinates);
+        self.normalizeCoordinates(rooms);
+        self.normalizeRooms(rooms);
+        self.createSVGs();
+        self.ready();
+        self.update();
       });
     }
     update() {
-      var bbox = (pma.current_room || pma.current_group || this).bbox;
-      this.zoomSVG(bbox)
+      if (this.current_floor != pma.current_floor) {
+        this.current_floor && this.current_floor.svg.animate().opacity(0).style("z-index",0);
+        pma.current_floor.svg.animate().opacity(1).style("z-index",1);
+        this.current_floor = pma.current_floor;
+      }
+      if (pma.current_room) {
+        var bbox = pma.current_room.bbox;
+      } else if (pma.current_group) {
+        var bbox = pma.current_floor.bboxes[pma.current_group.name];
+      } else {
+        var bbox = pma.current_floor.bbox;
+      }
+      this.current_floor.svg.animate().viewbox(bbox);
     }
-    zoomSVG(bbox) {
-      bbox = bbox.merge(bbox);
-      var dx = 5;
-      var dy = 5;
-      bbox.x = bbox.x-dx;
-      bbox.y = bbox.y-dy
-      bbox.width = bbox.width+2*dx;
-      bbox.height = bbox.height+2*dy;
-      this.svg.animate().viewbox(bbox);
-    }
-    normalizeCoordinates() {
-      var rooms = this.all_rooms.filter((r) => r.coordinates);
+    normalizeCoordinates(rooms) {
       var all_x = [];
       var all_y = [];
       for (var room of rooms) {
@@ -231,13 +200,53 @@ uR.ready(function() {
         ]
       }
     }
-    showRooms(filters) {
-      var rooms = this.all_rooms.filter((r) => r.coordinates);
-      for (var key in filters) {
-        rooms = rooms.filter((r) => r[key] == filters[key])
+    createSVGs() {
+      for (var floor of pma.floor_list) {
+        var svg_tag = uR.newElement("svg",{
+          id: "svg-"+floor.name,
+          parent: this.parent,
+          height: this.width,
+          width: this.height
+        });
+        floor.svg = SVG(svg_tag);
+        floor.svg.floor = floor;
+        floor.bboxes = {};
+
+        var visible_rooms = this.all_rooms.filter((r) => r.coordinates && r.floor == floor.name);
+        var visible_groups = [];
+        var buffer = 10;
+        for (var room of visible_rooms) {
+          var group_name = ROOM_GROUP_MAP[room.name];
+          room.group = pma.groups[group_name];
+          if (group_name && visible_groups.indexOf(group_name) == -1) {
+            visible_groups.push(group_name)
+          }
+          var polygon = floor.svg.polygon(room.canvas_coords).fill(ROOM_COLOR_MAP[room.name] || "#ccc")
+            .stroke({ width: 1 })
+            .click(function() {
+              if (pma.current_group == this.room.group) {
+                uR.route(`#/${pma.current_floor.name}/${this.room.group.name}/${this.room.name}/`);
+              } else { // no group selected, zoom in on group
+                this.room.group && uR.route(`#/${pma.current_floor.name}/${this.room.group.name}/`);
+              }
+            });
+          polygon.room = room;
+          room.bbox = polygon.bbox();
+          room.bbox.x -= buffer;
+          room.bbox.y -= buffer;
+          room.bbox.width += 2*buffer;
+          room.bbox.height += 2*buffer;
+          floor.bbox = floor.bbox?floor.bbox.merge(room.bbox):room.bbox;
+          if (group_name) {
+            if (!floor.bboxes[group_name]) { floor.bboxes[group_name] = room.bbox; }
+            floor.bboxes[group_name] = floor.bboxes[group_name].merge(room.bbox);
+          }
+        }
+        visible_groups.sort();
+        floor.groups = visible_groups.map((name) => pma.groups[name]);
+        floor.svg.opacity(0);
+        floor.svg.viewbox(floor.bbox);
       }
-      this.visible_rooms = rooms;
-      this.normalizeRooms(rooms);
     }
   }
 })
