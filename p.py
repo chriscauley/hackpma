@@ -31,12 +31,12 @@ if __name__ == "__main__":
   print Location.objects.count(),"Locations"
   offset = 0 #MuseumObject.objects.count()
   count = 1000
-  limit = 500
+  limit = 100
   ids = []
   for i in range(count):
     objects = api.get('objectsOnView',limit=limit,offset=offset)
     print MuseumObject.objects.count(),"/",offset
-    if offset >= 1000:
+    if offset >= 6000:
       break
     offset = offset + limit
     for o in objects:
