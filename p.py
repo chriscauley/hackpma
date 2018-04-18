@@ -12,10 +12,11 @@ class PMAAPI():
     self.token = token
   def get(self,end_point,**kwargs):
     url = 'https://hackathon.philamuseum.org/api/v0/collection/{}?api_token={}&'.format(end_point,self.token)
+    url += urllib.urlencode(kwargs.items())
+    print url
     fname = os.path.join(settings.BASE_DIR,"../.cache",slugify(url))
     if os.path.exists(fname):
       return json.loads(open(fname,'r').read())
-    url += urllib.urlencode(kwargs.items())
     response = requests.get(url)
     response.raise_for_status()
     with open(fname,'w') as f:
@@ -24,7 +25,7 @@ class PMAAPI():
     return json.loads(response.text)
 
 if __name__ == "__main__":
-  api = PMAAPI('6p9XX1VAxfLxNHjrjC9xF5KYskcmSTwMMrXCjCdR2IoKoeYNLxCSoV3BZDhM')
+  api = PMAAPI(settings.PMA_API_KEY
   locations = api.get("locations")
   for location in locations:
     Location.from_json(location)
