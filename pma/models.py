@@ -80,22 +80,22 @@ class MuseumObject(APIModel):
   image_url = property(lambda self: self.image.url if self.image else None)
   thumbnail_url = property(lambda self: self.thumbnail.url if self.image else None)
   artist = property(lambda self: self.data['Artist'])
-  def make_artists(self):
-    for data in self.data['Artists']:
-      artist,new = Artist.objects.get_or_create(name=data['Artist'],defaults={'data': data})
-      if new:
-        print "Artist created: ",artist
-      self.artists.add(artist)
-  def get_images(self):
-    for _type in ["Thumbnail","Image"]:
-      field = getattr(self,_type.lower())
-      if field or not self.data[_type]:
-        continue
-      r = requests.get(self.data[_type],stream=True)
-      if r.status_code == 200:
-        name = self.data[_type].split("/")[-1]
-        field.save(name,r.raw)
-      self.save()
+  def save(self,*args,**kwargs):
+    if not self.id:
+      for data in self.data['Artists']:
+        artist,new = Artist.objects.get_or_create(name=data['Artist'],defaults={'data': data})
+        if new:
+          print "Artist created: ",artist
+        self.artists.add(artist)
+      for _type in ["Thumbnail","Image"]:
+        field = getattr(self,_type.lower())
+        if field or not self.data[_type]:
+          continue
+        r = requests.get(self.data[_type],stream=True)
+        if r.status_code == 200:
+          name = self.data[_type].split("/")[-1]
+          field.save(name,r.raw)
+    super(MuseumObject,self).save(*args,**kwargs)
 
 class Location(APIModel):
   json_fields = ['name','coordinates','floor']
