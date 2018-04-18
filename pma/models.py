@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from django.contrib.gis.geos import MultiPolygon, Polygon
-from django.contrib.gis.db import models
+#from django.contrib.gis.geos import MultiPolygon, Polygon
+#from django.contrib.gis.db import models
+from django.db import models
 
 import logging, jsonfield, json, requests
 
@@ -110,15 +111,12 @@ class Location(APIModel):
   floor = models.CharField(max_length=16)
   _open = models.BooleanField()
   title = models.CharField(max_length=256,null=True,blank=True)
-  coordinates = models.MultiPolygonField(null=True)
+  #GIS coordinates = models.MultiPolygonField(null=True)
+  coordinates = jsonfield.JSONField(default=list)
   _type = models.CharField(max_length=32,null=True,blank=True)
-  @property
-  def as_json(self):
-    data = super(Location,self).as_json
-    data['coordinates'] = self.coordinates.coords[0][0] if self.coordinates else None
-    return data
   def save(self,*args,**kwargs):
     if self.data['Coordinates']:
-      coords = [Polygon(c['coordinates']) for c in self.data['Coordinates']]
-      self.coordinates = MultiPolygon(coords)
+      #GIS coords = [Polygon(c['coordinates']) for c in self.data['Coordinates']]
+      #GIS self.coordinatess = MultiPolygon(coords)
+      self.coordinates = self.data['Coordinates'][0]['coordinates']
     super(Location,self).save(*args,**kwargs)

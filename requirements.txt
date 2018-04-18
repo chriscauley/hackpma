@@ -1,5 +1,7 @@
-django<1.10
-djangorestframework-3.8.2
+django==1.11.12
+djangorestframework==3.8.2
+requests
+django-jsonfield
 django-suit
 pyOpenSSL
 ndg-httpsclient

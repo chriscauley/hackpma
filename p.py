@@ -25,7 +25,7 @@ class PMAAPI():
     return json.loads(response.text)
 
 if __name__ == "__main__":
-  api = PMAAPI(settings.PMA_API_KEY
+  api = PMAAPI(settings.PMA_API_KEY)
   locations = api.get("locations")
   for location in locations:
     Location.from_json(location)
