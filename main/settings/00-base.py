@@ -91,3 +91,7 @@ COMPRESS_PRECOMPILERS = [
 ]
 
 FAVICON = '/static/favicon.ico'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': []
+}
