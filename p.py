@@ -13,8 +13,9 @@ class PMAAPI():
   def get(self,end_point,**kwargs):
     url = 'https://hackathon.philamuseum.org/api/v0/collection/{}?api_token={}&'.format(end_point,self.token)
     url += urllib.urlencode(kwargs.items())
-    print url
     fname = os.path.join(settings.BASE_DIR,"../.cache",slugify(url))
+    if not os.path.exists(os.path.join(settings.BASE_DIR,"../.cache")):
+      os.mkdir(os.path.join(settings.BASE_DIR,"../.cache"))
     if os.path.exists(fname):
       return json.loads(open(fname,'r').read())
     response = requests.get(url)
@@ -25,6 +26,9 @@ class PMAAPI():
     return json.loads(response.text)
 
 if __name__ == "__main__":
+  if not getattr(settings,"PMA_API_KEY",None):
+    print "API key not found. Please get from https://hackathon.philamuseum.org/ and add it as PMA_API_KEY to main/settings/local.py"
+    exit()
   api = PMAAPI(settings.PMA_API_KEY)
   locations = api.get("locations")
   for location in locations:
