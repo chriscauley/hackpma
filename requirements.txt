@@ -6,4 +6,4 @@ django-suit
 pyOpenSSL
 ndg-httpsclient
 pyasn1
-
+lablackey==0.1.4

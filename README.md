@@ -3,7 +3,7 @@
 The following should work on Mac or Linux. Before you begin you'll need to install sqlite3 with brew or apt.
 
 ```
-sudo easy_install pip` # Install pip
+sudo easy_install pip` # Install pip. alternately: sudo apt install pip
 
 sudo pip install virtualenv # Install virtualenv
 
