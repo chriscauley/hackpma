@@ -82,7 +82,7 @@ class MuseumObject(APIModel):
   thumbnail_url = property(lambda self: self.thumbnail.url if self.image else None)
   artist = property(lambda self: self.data['Artist'])
   def save(self,*args,**kwargs):
-    if not self.id:
+    if not self.thumbnail:
       for data in self.data['Artists']:
         artist,new = Artist.objects.get_or_create(name=data['Artist'],defaults={'data': data})
         if new:
