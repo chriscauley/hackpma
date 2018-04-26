@@ -111,20 +111,23 @@ uR.ready(function() {
       //   max_wh*f.x_scale,
       //   max_wh*f.y_scale,
       // ).center(this.width/2,this.height/2+f.y_off*max_wh);
-      uR.storage.remote(`/api/location/?per_page=0`,function(data) {
-        self.all_rooms = data.results;
-        pma.room_list = pma.room_list.concat(data.results);
-        for (var room of pma.room_list) { pma.rooms[room.name] = room; }
-        var rooms = self.all_rooms.filter((r) => r.coordinates);
-        for (var group of pma.group_list) {
-          group.room_list = group.room_names.map((name) => pma.rooms[name])
+      uR.ajax({
+        url: `/api/location/?per_page=0`,
+        success: function(data) {
+          self.all_rooms = data.results;
+          pma.room_list = pma.room_list.concat(data.results);
+          for (var room of pma.room_list) { pma.rooms[room.name] = room; }
+          var rooms = self.all_rooms.filter((r) => r.coordinates);
+          for (var group of pma.group_list) {
+            group.room_list = group.room_names.map((name) => pma.rooms[name])
+          }
+          self.normalizeCoordinates(rooms);
+          self.normalizeRooms(rooms);
+          self.createSVGs();
+          self.ready();
+          self.update();
+          self.tag.update()
         }
-        self.normalizeCoordinates(rooms);
-        self.normalizeRooms(rooms);
-        self.createSVGs();
-        self.ready();
-        self.update();
-        self.tag.update()
       });
     }
     update() {
@@ -219,7 +222,10 @@ uR.ready(function() {
         floor.svg.floor = floor;
         floor.bboxes = {};
 
-        var visible_rooms = this.all_rooms.filter((r) => r.coordinates && r.floor == floor.name);
+        var visible_rooms = this.all_rooms.filter((r) =>
+                                                  r.coordinates &&
+                                                  r.coordinates.length
+                                                  && r.floor == floor.name);
         var visible_groups = [];
         var buffer = 10;
         for (var room of visible_rooms) {
