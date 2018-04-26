@@ -49,3 +49,4 @@ if __name__ == "__main__":
   print len(set(ids))
   for model in [Location,MuseumObject]:
     print model,model.objects.count()
+  [m.save() for m in MuseumObject.objects.all()]
