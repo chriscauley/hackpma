@@ -70,7 +70,7 @@ class MuseumObject(APIModel):
   location = models.ForeignKey("Location",null=True,blank=True)
 
   from_json_fields = ['title']
-  json_fields = ['image_url','thumbnail_url','artist','title']
+  json_fields = ['image_url','thumbnail_url','artist','title','data']
   json_filter_fields = {'location_id':'location_id'}
   from_json_fks = [
     ('location', lambda data: get_or_none(

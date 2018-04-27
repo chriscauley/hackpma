@@ -4,12 +4,18 @@
       <div class="container">
         <div class="columns">
           <div class="column col-4 card" each={ image,i in opts.images }>
-            <div><img src={ image.thumbnail_url } /></div>
+            <div>
+              <img src={ image.thumbnail_url } />
+              <h2>{ image.data['Title'] }</h2>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
+
+  <script>
+  </script>
 </image-modal>
 
 <pma-map>
